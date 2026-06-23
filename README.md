@@ -51,8 +51,6 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 | `/` | Focus Search Bar | Normal Mode |
 | `Enter` | Play Selected Track / Submit Search | Normal/Search Mode |
 | `p` | Play / Pause Audio | Global |
-| `s` | Save Song to Local Playlist | Focused on Songs Table |
-| `d` | Delete Song from Local Playlist | Focused on Songs Table |
 | `r` | Refresh Recommendations | Normal Mode |
 | `?` | Toggle Help Menu | Global |
 | `Esc` | Unfocus Search / Close Help | Search/Help Mode |
