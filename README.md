@@ -38,7 +38,7 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
    ./tusic
    ```
 
-## ⌨️ Keybindings
+## Keybindings
 
 | Key | Action | Context |
 | :--- | :--- | :--- |
@@ -59,7 +59,7 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 | `q` | Quit Tusic | Global |
 
 
-## Roadmap / TODO
+## Workdone
 - [x] Grid Layout
 - [x] Local SQLite History & Playlists
 - [x] Dynamic "Made For You" Curation
