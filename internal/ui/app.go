@@ -400,8 +400,8 @@ func (m AppModel) View() string {
 	ui := lipgloss.JoinVertical(lipgloss.Left, header, middle, footer)
 
 	if m.helpOpen {
-		dialog := helpDialogStyle.Render(lipgloss.NewStyle().Bold(true).Render("Tusic Keybindings\n") + 
-		"\n  Navigation\n  h / l : Focus Sidebar / Songs\n  H / L : View Search / View Up Next\n  j / k : Move up / down\n\n  Playback\n  p : Play / Pause\n  n : Next Track\n\n  General\n  / : Search\n  esc / q : Close")
+		dialog := helpDialogStyle.Render(lipgloss.NewStyle().Bold(true).Render("Tusic Keybindings") + 
+		"\n\n  Navigation\n  h / l : Focus Sidebar / Songs\n  H / L : View Search / View Up Next\n  j / k : Move up / down\n\n  Playback\n  p : Play / Pause\n  n : Next Track\n\n  General\n  / : Search\n  esc / q : Close")
 		ui = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, dialog, lipgloss.WithWhitespaceChars(" "))
 	}
 	return ui
