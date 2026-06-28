@@ -55,6 +55,7 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 | `L` | Focus Right (Up Next Table) | Search Results |
 | `j` | Move Cursor Down | Normal Mode |
 | `k` | Move Cursor Up | Normal Mode |
+| `o` | Loop Current Song | Global |
 | `/` | Focus Search Bar | Normal Mode |
 | `Enter` | Play Selected Track / Submit Search | Normal/Search Mode |
 | `p` | Play / Pause Audio | Global |
@@ -63,7 +64,7 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 | `r` | Refresh Recommendations | Normal Mode |
 | `?` | Toggle Help Menu | Global |
 | `Esc` | Unfocus Search / Close Help | Search/Help Mode |
-| `q` | Quit Tusic | Global |
+| `<C-c>` | Quit Tusic | Global |
 
 
 ## Workdone
@@ -73,4 +74,5 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 - [x] Timestamps can be seen
 - [x] Windows for search results and song recommendations to play next in "Up Next".
 - [x] Auto-play functionality (play next song from "Up Next" when current finishes)
+- [x] Loop Songs
 - [ ] going back and forward in song timeline.
