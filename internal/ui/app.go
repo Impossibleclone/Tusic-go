@@ -72,6 +72,7 @@ type AppModel struct {
 	autoPlay      bool
 	isLoading     bool 
 	isPaused      bool
+	isLooping     bool
 	upNextPending bool 
 	hasBooted     bool
 	progressStr   string
@@ -186,6 +187,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.statusMsg = "Playing."
 			m.isPaused = false // Reset pause flag when a new song starts
+			m.isLooping = false
 			m.player.Play(url)
 			m.autoPlay = true
 		}
@@ -254,6 +256,9 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.isPaused = m.player.TogglePause()
 				if m.isPaused { m.statusMsg = "Paused." } else { m.statusMsg = "Playing." }
 			case "n": cmds = append(cmds, m.playNext())
+			case "o":
+				m.isLooping = m.player.ToggleLoop()
+				if m.isLooping{ m.statusMsg = "Looping." } else { m.statusMsg = "Looping." }
 			case "r":
 				hist := m.db.GetHistory()
 				if len(hist) > 0 {
@@ -340,6 +345,8 @@ func (m *AppModel) playNext() tea.Cmd {
 			m.searchTable.MoveDown(1)
 			if m.searchTable.Cursor() >= len(m.searchSongs) { return nil }
 			selected = m.searchSongs[m.searchTable.Cursor()]
+		} else if m.isLooping {
+			selected = m.searchSongs[m.searchTable.Cursor()]
 		} else {
 			m.upNextTable.MoveDown(1)
 			if m.upNextTable.Cursor() >= len(m.upNextSongs) { return nil }
@@ -391,6 +398,7 @@ func (m AppModel) View() string {
 	if m.playing != nil { 
 		// Now actively reads the isPaused flag so the UI updates correctly
 		stateIcon := "▶ Playing"
+		if m.isLooping { stateIcon = "∞ Looping" }
 		if m.isPaused { stateIcon = "⏸ Paused" }
 		nowPlaying = fmt.Sprintf("%s %s : %s - %s", stateIcon, m.progressStr, m.playing.Title, m.playing.Artist) 
 	}

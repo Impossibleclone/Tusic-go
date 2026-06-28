@@ -67,6 +67,33 @@ func (p *Player) TogglePause() bool {
 	return !isPaused
 }
 
+func (p *Player) ToggleLoop() bool {
+    loop, err := p.conn.Get("loop-file")
+    if err != nil || loop == nil {
+        return false
+    }
+	
+    var isLooping bool
+    switch v := loop.(type) {
+    case string:
+        isLooping = (v != "no" && v != "false")
+    case bool:
+        isLooping = v
+    default:
+        isLooping = true
+    }
+
+    var nextState string
+    if isLooping {
+        nextState = "no"
+    } else {
+        nextState = "inf"
+    }
+    p.conn.Set("loop-file", nextState)
+    
+    return !isLooping
+}
+
 func (p *Player) GetProgress() (float64, float64, bool) {
 	pos, _ := p.conn.Get("time-pos")
 	dur, _ := p.conn.Get("duration")
