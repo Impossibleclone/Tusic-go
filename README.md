@@ -39,11 +39,16 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 
 4. **Run the program:**
    ```bash
-   // If built from source
+   # If built from source
    ./tusic
-   // or 
+   # or 
    make run
    ```
+5. **Install tusic**
+    ```bash
+    # ensure GOPATH is set in your shellrc
+    make install
+    ```
 
 ## Keybindings
 
@@ -75,4 +80,5 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 - [x] Windows for search results and song recommendations to play next in "Up Next".
 - [x] Auto-play functionality (play next song from "Up Next" when current finishes)
 - [x] Loop Songs
+- [x] Pywal Integration
 - [ ] going back and forward in song timeline.
