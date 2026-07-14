@@ -27,8 +27,10 @@ tidy: ## Format code and download missing dependencies
 	go fmt ./...
 
 install: build ## Build and install the binary to your Go bin directory
-	@echo "Installing $(BINARY_NAME) to $(GOPATH)/bin..."
-	go install -ldflags="-s -w" $(MAIN_PATH)
+	@echo "Installing $(BINARY_NAME)..."
+	@mkdir -p $(HOME)/go/bin
+	@go build -ldflags="-s -w" -o $(HOME)/go/bin/$(BINARY_NAME) $(MAIN_PATH)
+	@echo "Install complete!"
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
