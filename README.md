@@ -21,7 +21,7 @@ Tusic strips away the bloat of modern electron apps, giving you a clean, keyboar
 * **mpv** (Required: Core audio engine)
 
 ### System Dependencies
-You need the `mpv` media player and 'yt-dlp' installed on your system for the audio engine to work.
+You need the `mpv` media player, SQLite.
 
 ## Installation & Setup
 
