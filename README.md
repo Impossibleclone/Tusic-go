@@ -69,7 +69,7 @@ You need the `mpv` media player and 'yt-dlp' installed on your system for the au
 | `r` | Refresh Recommendations | Normal Mode |
 | `?` | Toggle Help Menu | Global |
 | `Esc` | Unfocus Search / Close Help | Search/Help Mode |
-| `<C-c>` | Quit Tusic | Global |
+| `q` | Quit Tusic | Global |
 
 
 ## Workdone
