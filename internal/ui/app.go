@@ -222,6 +222,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
+		case "q":
+			return m, tea.Quit
 		case "ctrl+c":
 			return m, tea.Quit
 		case "?":
