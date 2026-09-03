@@ -24,6 +24,7 @@ func New() *Player {
 		"--idle=yes",
 		"--no-video",
 		"--force-window=no", // Ensure no blank windows pop up
+		"--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 		"--ytdl-format=bestaudio/best",
 		fmt.Sprintf("--input-ipc-server=%s", sock),
 	}
@@ -94,10 +95,11 @@ func (p *Player) ToggleLoop() bool {
     return !isLooping
 }
 
-func (p *Player) GetProgress() (float64, float64, bool) {
+func (p *Player) GetProgress() (float64, float64, bool, bool) {
 	pos, _ := p.conn.Get("time-pos")
 	dur, _ := p.conn.Get("duration")
 	idle, _ := p.conn.Get("idle-active")
+	path, _ := p.conn.Get("path")
 
 	current, total := 0.0, 0.0
 	if pos != nil {
@@ -110,8 +112,9 @@ func (p *Player) GetProgress() (float64, float64, bool) {
 	if idle != nil {
 		isIdle = idle.(bool)
 	}
+	hasFile := (path != nil && path != "")
 
-	return current, total, isIdle
+	return current, total, isIdle, hasFile
 }
 
 func (p *Player) Close() {

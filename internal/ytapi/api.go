@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/impossibleclone/tusic-go/internal/models"
-	"github.com/kkdai/youtube/v2"
 	"github.com/tidwall/gjson"
 )
 
@@ -130,26 +129,6 @@ func GetRadio(videoID string) []models.Song {
 }
 
 func GetStreamURL(videoID string) string {
-	client := youtube.Client{}
-
-	// Fetch video metadata natively
-	video, err := client.GetVideo(videoID)
-	if err != nil {
-		return ""
-	}
-
-	// Filter for formats that actually contain audio
-	formats := video.Formats.WithAudioChannels()
-	formats.Sort() // Sorts to best quality automatically
-
-	// Extract the direct Google video URL
-	if len(formats) > 0 {
-		url, err := client.GetStreamURL(video, &formats[0])
-		if err == nil && url != "" {
-			return url
-		}
-	}
-
-	// If all native extraction fails, return empty to trigger a skip
-	return ""
+	// Let mpv handle the extraction natively via ytdl:// to bypass recent YouTube 403 Forbidden blocks
+	return "ytdl://" + videoID
 }

@@ -23,11 +23,11 @@ require (
 	github.com/clipperhouse/displaywidth v0.9.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
-	github.com/dop251/goja v0.0.0-20260311135729-065cd970411c // indirect
+	github.com/dlclark/regexp2/v2 v2.7.1 // indirect
+	github.com/dop251/goja v0.0.0-20260901132549-43234fa61381 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
-	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc // indirect
+	github.com/google/pprof v0.0.0-20260902005441-ca85771921e4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
@@ -40,6 +40,6 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )

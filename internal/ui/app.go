@@ -72,6 +72,8 @@ type AppModel struct {
 	statusMsg     string
 	autoPlay      bool
 	isLoading     bool
+	isResolving   bool
+	loadingTicks  int
 	isPaused      bool
 	isLooping     bool
 	upNextPending bool
@@ -187,27 +189,53 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case streamResolvedMsg:
 		url := string(msg)
+		m.isResolving = false
 		if url == "" {
-			m.statusMsg = "Error: Stream extraction failed."
+			m.statusMsg = "Error: Stream extraction failed. Skipping..."
 			m.isLoading = false
-			m.autoPlay = false
+			m.autoPlay = true
 		} else {
-			m.statusMsg = "Playing."
+			m.statusMsg = "Buffering stream..."
 			m.isPaused = false // Reset pause flag when a new song starts
 			m.isLooping = false
 			m.player.Play(url)
 			m.autoPlay = true
+			m.loadingTicks = 0
 		}
 
 	case tickMsg:
-		cur, dur, idle := m.player.GetProgress()
+		cur, dur, idle, hasFile := m.player.GetProgress()
+
+		if m.isLoading {
+			m.loadingTicks++
+			if m.isResolving {
+				if m.loadingTicks > 0 && m.loadingTicks%2 == 0 {
+					m.statusMsg = fmt.Sprintf("Extracting stream... (%ds)", m.loadingTicks)
+				}
+			} else {
+				if m.loadingTicks > 0 && m.loadingTicks%2 == 0 {
+					m.statusMsg = fmt.Sprintf("Buffering stream... (%ds)", m.loadingTicks)
+				}
+			}
+		}
 
 		if dur > 0 {
 			m.progressStr = fmt.Sprintf("[%02d:%02d / %02d:%02d]", int(cur)/60, int(cur)%60, int(dur)/60, int(dur)%60)
-			m.isLoading = false
+			if m.isLoading {
+				m.isLoading = false
+				m.loadingTicks = 0
+				m.statusMsg = "Playing."
+			}
 		}
 
-		if idle && !m.isLoading && m.autoPlay && m.playing != nil {
+		// If we are not resolving, and we have waited a bit, and mpv has NO file loaded, it means the stream failed.
+		if m.isLoading && !m.isResolving && m.loadingTicks > 2 && !hasFile {
+			m.isLoading = false
+			m.statusMsg = "Error: Stream failed to play. Skipping..."
+		}
+
+		// Play next track if idle (finished) AND we are not loading AND we have autoPlay enabled.
+		if idle && !m.isLoading && m.autoPlay && m.playing != nil && !m.isPaused {
 			m.autoPlay = false
 			cmds = append(cmds, m.playNext())
 		}
@@ -375,6 +403,8 @@ func (m *AppModel) playManual() tea.Cmd {
 	m.statusMsg = "Extracting stream..."
 	m.autoPlay = false
 	m.isLoading = true
+	m.isResolving = true
+	m.loadingTicks = 0
 
 	cmds := []tea.Cmd{
 		func() tea.Msg { return streamResolvedMsg(ytapi.GetStreamURL(selected.ID)) },
@@ -419,6 +449,8 @@ func (m *AppModel) playNext() tea.Cmd {
 	m.statusMsg = "Loading next track..."
 	m.autoPlay = false
 	m.isLoading = true
+	m.isResolving = true
+	m.loadingTicks = 0
 
 	return func() tea.Msg { return streamResolvedMsg(ytapi.GetStreamURL(selected.ID)) }
 }
@@ -466,18 +498,31 @@ func (m AppModel) View() string {
 
 	nowPlaying := m.statusMsg
 	if m.playing != nil {
-		// Now actively reads the isPaused flag so the UI updates correctly
 		stateIcon := "▶ Playing"
-		if m.isLooping {
-			stateIcon = "∞ Looping"
-		}
-		if m.isPaused {
+		if m.isLoading {
+			stateIcon = "⧗ Loading"
+		} else if strings.HasPrefix(m.statusMsg, "Error") {
+			stateIcon = "⚠ Error"
+		} else if m.isPaused {
 			stateIcon = "⏸ Paused"
+		} else if m.isLooping {
+			stateIcon = "∞ Looping"
 		}
 		nowPlaying = fmt.Sprintf("%s %s : %s - %s", stateIcon, m.progressStr, m.playing.Title, m.playing.Artist)
 	}
 
-	footer := baseBorderStyle.Width(m.width - 2).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.MarginBottom(0).Render("— Player"), lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(nowPlaying)))
+	// Make the status stand out by using a bright floating-like bar above the player if loading or errored
+	var floatingMsg string
+	if m.isLoading || strings.HasPrefix(m.statusMsg, "Error") {
+		floatingMsg = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#000000")).
+			Background(lipgloss.Color("#F3F99D")).
+			Padding(0, 2).
+			Bold(true).
+			Render(" " + m.statusMsg + " ") + "\n"
+	}
+
+	footer := baseBorderStyle.Width(m.width - 2).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.MarginBottom(0).Render("— Player"), floatingMsg+lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(nowPlaying)))
 
 	ui := lipgloss.JoinVertical(lipgloss.Left, header, middle, footer)
 
