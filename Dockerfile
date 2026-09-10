@@ -15,7 +15,9 @@ RUN go build -ldflags="-s -w" -o tusic ./cmd/tusic/main.go
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates mpv libmpv-dev alsa-utils sqlite3 && \
+    apt-get install -y --no-install-recommends ca-certificates mpv alsa-utils wget && \
+    wget -qO /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux && \
+    chmod a+rx /usr/local/bin/yt-dlp && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tusic
