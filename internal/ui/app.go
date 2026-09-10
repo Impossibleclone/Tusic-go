@@ -626,7 +626,7 @@ func (m AppModel) View() string {
 	} else {
 		rightSidebarContent = "\n\n  Waiting for music..."
 	}
-	rightSidebar := baseBorderStyle.Width(30).Height(m.height - 10).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("— Art & Lyrics [ / ]"), rightSidebarContent))
+	rightSidebar := baseBorderStyle.Width(30).Height(m.height - 10).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("— Art & Lyrics"), rightSidebarContent))
 
 	middle := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, " ", mainContent, " ", rightSidebar)
 
