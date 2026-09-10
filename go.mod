@@ -10,6 +10,7 @@ require (
 	github.com/kkdai/youtube/v2 v2.10.6
 	github.com/mattn/go-sqlite3 v1.14.47
 	github.com/tidwall/gjson v1.19.0
+	golang.org/x/image v0.46.0
 )
 
 require (
@@ -39,7 +40,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )

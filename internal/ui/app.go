@@ -33,6 +33,25 @@ const (
 )
 
 type tickMsg time.Time
+
+type artLoadedMsg struct {
+	art    string
+	lyrics []LyricLine
+}
+
+func fetchArtCmd(videoID, title, artist string) tea.Cmd {
+	return func() tea.Msg {
+		art := getThumbnailANSI(videoID, 24, 7)
+		lyrics := getLyrics(title, artist)
+		if art == "" {
+			art = "No Album Art"
+		}
+		if lyrics == nil {
+			lyrics = []LyricLine{{TimeSeconds: -1, Text: "No lyrics found."}}
+		}
+		return artLoadedMsg{art: art, lyrics: lyrics}
+	}
+}
 type initialMixMsg []models.Song
 type searchCompleteMsg []models.Song
 type streamResolvedMsg string
@@ -41,8 +60,8 @@ type radioFetchedMsg []models.Song
 var (
 	borderColor       = lipgloss.Color(colors.GetPywalColors().Colors["color8"])
 	activeBorder      = lipgloss.Color(colors.GetPywalColors().Colors["color4"])
-	baseBorderStyle   = lipgloss.NewStyle().BorderStyle(lipgloss.NormalBorder()).BorderForeground(borderColor)
-	activeBorderStyle = lipgloss.NewStyle().BorderStyle(lipgloss.NormalBorder()).BorderForeground(activeBorder)
+	baseBorderStyle   = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(borderColor)
+	activeBorderStyle = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(activeBorder)
 	sidebarItemStyle  = lipgloss.NewStyle().PaddingLeft(1)
 	activeItemStyle   = lipgloss.NewStyle().PaddingLeft(1).Background(lipgloss.Color("#2d4b5a")).Foreground(lipgloss.Color("#B5EAD7"))
 	helpDialogStyle   = lipgloss.NewStyle().Border(lipgloss.DoubleBorder()).BorderForeground(activeBorder).Background(lipgloss.Color(colors.GetPywalColors().Special.Background)).Padding(1, 4)
@@ -79,7 +98,26 @@ type AppModel struct {
 	upNextPending bool
 	hasBooted     bool
 	progressStr   string
+	currentPos    float64
+	totalDur      float64
 	tableTitle    string
+	albumArt       string
+	lyrics         []LyricLine
+	lyricsScroll   int
+	activeLyricIdx int
+	userScrolled   bool
+	lastArtID      string
+}
+
+func createProgressBar(cur, dur float64, width int) string {
+	if width < 4 { return "" }
+	if dur <= 0 { return "[" + strings.Repeat(" ", width-2) + "]" }
+	percent := cur / dur
+	if percent > 1 { percent = 1 }
+	filled := int(percent * float64(width-2))
+	empty := width - 2 - filled
+	if empty < 0 { empty = 0 }
+	return "[" + strings.Repeat("█", filled) + strings.Repeat(" ", empty) + "]"
 }
 
 func createTable() table.Model {
@@ -126,7 +164,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		mainInnerWidth := m.width - 30
+		mainInnerWidth := m.width - 65
+		if mainInnerWidth < 10 { mainInnerWidth = 10 }
 		columns := []table.Column{
 			{Title: "Title", Width: mainInnerWidth / 2},
 			{Title: "Artist", Width: mainInnerWidth / 4},
@@ -203,8 +242,44 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loadingTicks = 0
 		}
 
+	case artLoadedMsg:
+		m.albumArt = msg.art
+		m.lyrics = msg.lyrics
+		m.lyricsScroll = 0
+		m.activeLyricIdx = 0
+		m.userScrolled = false
+
 	case tickMsg:
 		cur, dur, idle, hasFile := m.player.GetProgress()
+
+		var cmd tea.Cmd
+		if m.playing != nil && m.playing.ID != m.lastArtID {
+			m.lastArtID = m.playing.ID
+			m.albumArt = "Loading art..."
+			m.lyrics = []LyricLine{{TimeSeconds: -1, Text: "Loading lyrics..."}}
+			m.lyricsScroll = 0
+			m.activeLyricIdx = 0
+			m.userScrolled = false
+			cmd = fetchArtCmd(m.playing.ID, m.playing.Title, m.playing.Artist)
+		}
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		if m.playing != nil && len(m.lyrics) > 0 {
+			for i, line := range m.lyrics {
+				if line.TimeSeconds > 0 && cur >= line.TimeSeconds-1.0 {
+					m.activeLyricIdx = i
+				}
+			}
+			
+			if !m.userScrolled {
+				m.lyricsScroll = m.activeLyricIdx - 3
+				if m.lyricsScroll < 0 {
+					m.lyricsScroll = 0
+				}
+			}
+		}
 
 		if m.isLoading {
 			m.loadingTicks++
@@ -220,6 +295,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if dur > 0 {
+			m.currentPos = cur
+			m.totalDur = dur
 			m.progressStr = fmt.Sprintf("[%02d:%02d / %02d:%02d]", int(cur)/60, int(cur)%60, int(dur)/60, int(dur)%60)
 			if m.isLoading {
 				m.isLoading = false
@@ -228,19 +305,28 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// If we are not resolving, and we have waited a bit, and mpv has NO file loaded, it means the stream failed.
 		if m.isLoading && !m.isResolving && m.loadingTicks > 2 && !hasFile {
 			m.isLoading = false
 			m.statusMsg = "Error: Stream failed to play. Skipping..."
 		}
 
-		// Play next track if idle (finished) AND we are not loading AND we have autoPlay enabled.
 		if idle && !m.isLoading && m.autoPlay && m.playing != nil && !m.isPaused {
 			m.autoPlay = false
 			cmds = append(cmds, m.playNext())
 		}
 		cmds = append(cmds, tea.Tick(time.Second, func(t time.Time) tea.Msg { return tickMsg(t) }))
 
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseWheelUp {
+			m.userScrolled = true
+			if m.lyricsScroll > 0 { m.lyricsScroll-- }
+			return m, nil
+		}
+		if msg.Type == tea.MouseWheelDown {
+			m.userScrolled = true
+			m.lyricsScroll++
+			return m, nil
+		}
 	case tea.KeyMsg:
 		if m.helpOpen {
 			if msg.String() == "esc" || msg.String() == "q" || msg.String() == "?" {
@@ -262,6 +348,16 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "esc":
 			m.focus = FocusTable
+			return m, nil
+		case "[":
+			m.userScrolled = true
+			if m.lyricsScroll > 0 {
+				m.lyricsScroll--
+			}
+			return m, nil
+		case "]":
+			m.userScrolled = true
+			m.lyricsScroll++
 			return m, nil
 		case "h":
 			if m.focus == FocusTable {
@@ -492,9 +588,47 @@ func (m AppModel) View() string {
 		activeTableView = m.upNextTable.View()
 	}
 
-	// Fixed mathematical width so the right border no longer clips outside the terminal
-	mainContent := tableBorder.Width(m.width - 30).Height(m.height - 10).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("— "+m.tableTitle), activeTableView))
-	middle := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, " ", mainContent)
+	mainContent := tableBorder.Width(m.width - 63).Height(m.height - 10).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("— "+m.tableTitle), activeTableView))
+	
+	var rightSidebarContent string
+	if m.playing != nil && m.albumArt != "" {
+		artBlock := m.albumArt
+		artLines := strings.Count(artBlock, "\n")
+
+		// Exact math: Sidebar Height (m.height - 10) minus Borders(2) minus Title(2) minus ArtLines minus padding(1)
+		lyricsHeight := (m.height - 10) - 2 - 2 - artLines - 1
+		if lyricsHeight < 1 {
+			lyricsHeight = 1
+		}
+
+		if m.lyricsScroll > len(m.lyrics)-1 {
+			m.lyricsScroll = len(m.lyrics)-1
+		}
+		if m.lyricsScroll < 0 {
+			m.lyricsScroll = 0
+		}
+
+		var visibleLyrics strings.Builder
+		for i := m.lyricsScroll; i < len(m.lyrics) && i < m.lyricsScroll+lyricsHeight; i++ {
+			if i == m.activeLyricIdx {
+				visibleLyrics.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true).Render(m.lyrics[i].Text) + "\n")
+			} else {
+				visibleLyrics.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(m.lyrics[i].Text) + "\n")
+			}
+		}
+
+		renderedLines := strings.Split(lipgloss.NewStyle().Width(28).Render(visibleLyrics.String()), "\n")
+		if len(renderedLines) > lyricsHeight {
+			renderedLines = renderedLines[:lyricsHeight]
+		}
+		lyricsBlock := strings.Join(renderedLines, "\n")
+		rightSidebarContent = lipgloss.JoinVertical(lipgloss.Center, artBlock, "\n", lyricsBlock)
+	} else {
+		rightSidebarContent = "\n\n  Waiting for music..."
+	}
+	rightSidebar := baseBorderStyle.Width(30).Height(m.height - 10).Render(lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("— Art & Lyrics [ / ]"), rightSidebarContent))
+
+	middle := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, " ", mainContent, " ", rightSidebar)
 
 	nowPlaying := m.statusMsg
 	if m.playing != nil {
@@ -508,7 +642,8 @@ func (m AppModel) View() string {
 		} else if m.isLooping {
 			stateIcon = "∞ Looping"
 		}
-		nowPlaying = fmt.Sprintf("%s %s : %s - %s", stateIcon, m.progressStr, m.playing.Title, m.playing.Artist)
+		bar := createProgressBar(m.currentPos, m.totalDur, 20)
+		nowPlaying = fmt.Sprintf("%s %s %s : %s - %s", stateIcon, m.progressStr, bar, m.playing.Title, m.playing.Artist)
 	}
 
 	// Make the status stand out by using a bright floating-like bar above the player if loading or errored
